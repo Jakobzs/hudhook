@@ -30,7 +30,7 @@ fn main() {
     let title = CString::new("DARK SOULS III").unwrap();
     let hwnd = unsafe { FindWindowA(None, PCSTR(title.as_ptr() as _)) };
 
-    if hwnd.is_invalid() {
+    if hwnd.0 == 0 {
         error!("FindWindowA returned NULL: {}", unsafe { GetLastError().0 });
         return;
     }
@@ -51,7 +51,7 @@ fn main() {
 
     let proc_addr = unsafe {
         GetProcAddress(
-            GetModuleHandleA(PCSTR(kernel32.as_ptr() as _)),
+            GetModuleHandleA(PCSTR(kernel32.as_ptr() as _)).unwrap(),
             PCSTR(freelibrary.as_ptr() as _),
         )
     };
@@ -59,7 +59,7 @@ fn main() {
     let _dll_path =
         widestring::WideCString::from_os_str(dll_path.canonicalize().unwrap().as_os_str()).unwrap();
 
-    let hproc = unsafe { OpenProcess(PROCESS_ALL_ACCESS, None, pid) };
+    let hproc = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) }.unwrap();
 
     let mut hmodule = [HINSTANCE(0); 256];
     let mut modname = [0u8; 128];
@@ -103,7 +103,8 @@ fn main() {
                     ptr,
                     0,
                     null_mut(),
-                );
+                )
+                .unwrap();
 
                 WaitForSingleObject(thread, INFINITE);
                 let mut ec = 0u32;
