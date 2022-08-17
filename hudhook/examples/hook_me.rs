@@ -23,7 +23,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 #[no_mangle]
 pub fn main(_argc: i32, _argv: *const *const u8) {
-    let hinstance = unsafe { GetModuleHandleA(None) };
+    let hinstance = unsafe { GetModuleHandleA(None) }.unwrap();
     let wnd_class = WNDCLASSA {
         style: CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
         lpfnWndProc: Some(window_proc),

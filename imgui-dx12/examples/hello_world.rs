@@ -39,7 +39,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) {
     ])
     .ok();
 
-    let hinstance = unsafe { GetModuleHandleA(PCSTR(null())) };
+    let hinstance = unsafe { GetModuleHandleA(PCSTR(null())) }.unwrap();
     let wnd_class = WNDCLASSA {
         style: CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
         lpfnWndProc: Some(window_proc),
