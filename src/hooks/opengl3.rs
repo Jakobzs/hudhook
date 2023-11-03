@@ -384,13 +384,13 @@ unsafe fn egui_draw(dc: HDC) {
             let wnd_proc = std::mem::transmute::<_, WndProcType>(SetWindowLongPtrA(
                 hwnd,
                 GWLP_WNDPROC,
-                imgui_wnd_proc as usize as isize,
+                egui_wnd_proc as usize as isize,
             ));
             #[cfg(target_arch = "x86")]
             let wnd_proc = std::mem::transmute::<_, WndProcType>(SetWindowLongA(
                 hwnd,
                 GWLP_WNDPROC,
-                imgui_wnd_proc as usize as i32,
+                egui_wnd_proc as usize as i32,
             ));
 
             // Create the imgui rendererer
