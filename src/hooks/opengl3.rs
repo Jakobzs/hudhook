@@ -325,7 +325,7 @@ impl EguiOpenGl3Hooks {
         // Create detours
         let hook_opengl_wgl_swap_buffers = MhHook::new(
             hook_opengl_swapbuffers_address as *mut _,
-            imgui_opengl32_wglSwapBuffers_impl as *mut _,
+            egui_opengl32_wglSwapBuffers_impl as *mut _,
         )
         .expect("couldn't create opengl32.wglSwapBuffers hook");
 
@@ -355,5 +355,132 @@ impl Hooks for EguiOpenGl3Hooks {
             renderer.lock().cleanup();
         }
         drop(IMGUI_RENDER_LOOP.take());
+    }
+}
+
+unsafe fn egui_draw(dc: HDC) {
+    // Get the imgui renderer, or create it if it does not exist
+    let mut imgui_renderer = IMGUI_RENDERER
+        .get_or_insert_with(|| {
+            // Create ImGui context
+            let mut context = imgui::Context::create();
+            context.set_ini_filename(None);
+
+            // Initialize the render loop with the context
+            IMGUI_RENDER_LOOP.get_mut().unwrap().initialize(&mut context);
+
+            let renderer = imgui_opengl::Renderer::new(&mut context, |s| {
+                get_proc_address(CString::new(s).unwrap()) as _
+            });
+
+            // Grab the HWND from the DC
+            let hwnd = WindowFromDC(dc);
+
+            // Set the new wnd proc, and assign the old one to a variable for further
+            // storing
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+            let wnd_proc = std::mem::transmute::<_, WndProcType>(SetWindowLongPtrA(
+                hwnd,
+                GWLP_WNDPROC,
+                imgui_wnd_proc as usize as isize,
+            ));
+            #[cfg(target_arch = "x86")]
+            let wnd_proc = std::mem::transmute::<_, WndProcType>(SetWindowLongA(
+                hwnd,
+                GWLP_WNDPROC,
+                imgui_wnd_proc as usize as i32,
+            ));
+
+            // Create the imgui rendererer
+            let mut imgui_renderer = ImguiRenderer {
+                ctx: context,
+                renderer,
+                wnd_proc,
+                game_hwnd: hwnd,
+                resolution_and_rect: None,
+            };
+
+            // Initialize window events on the imgui renderer
+            ImguiWindowsEventHandler::setup_io(&mut imgui_renderer);
+
+            // Return the imgui renderer as a mutex
+            Mutex::new(Box::new(imgui_renderer))
+        })
+        .lock();
+
+    imgui_renderer.render();
+}
+
+unsafe extern "system" fn egui_wnd_proc(
+    hwnd: HWND,
+    umsg: u32,
+    WPARAM(wparam): WPARAM,
+    LPARAM(lparam): LPARAM,
+) -> LRESULT {
+    if IMGUI_RENDERER.is_some() {
+        match IMGUI_RENDERER.as_mut().unwrap().try_lock() {
+            Some(imgui_renderer) => imgui_wnd_proc_impl(
+                hwnd,
+                umsg,
+                WPARAM(wparam),
+                LPARAM(lparam),
+                imgui_renderer,
+                IMGUI_RENDER_LOOP.get().unwrap(),
+            ),
+            None => {
+                debug!("Could not lock in WndProc");
+                DefWindowProcW(hwnd, umsg, WPARAM(wparam), LPARAM(lparam))
+            },
+        }
+    } else {
+        debug!("WndProc called before hook was set");
+        DefWindowProcW(hwnd, umsg, WPARAM(wparam), LPARAM(lparam))
+    }
+}
+
+#[allow(non_snake_case)]
+unsafe extern "system" fn egui_opengl32_wglSwapBuffers_impl(dc: HDC) {
+    trace!("opengl32.wglSwapBuffers invoked");
+
+    // Draw ImGui
+    egui_draw(dc);
+
+    // If resolution or window rect changes - reset ImGui
+    egui_reset(dc);
+
+    // Get the trampoline
+    let trampoline_wglswapbuffers =
+        TRAMPOLINE.get().expect("opengl32.wglSwapBuffers trampoline uninitialized");
+
+    // Call the original function
+    trampoline_wglswapbuffers(dc)
+}
+
+unsafe fn egui_reset(hdc: HDC) {
+    if IMGUI_RENDERER.is_none() {
+        return;
+    }
+
+    if let Some(mut renderer) = IMGUI_RENDERER.as_mut().unwrap().try_lock() {
+        // Get resolution
+        let viewport = &mut [0; 4];
+        glGetIntegerv(GL_VIEWPORT, viewport.as_mut_ptr());
+
+        let hwnd = WindowFromDC(hdc);
+        let rect = get_client_rect(&hwnd).unwrap();
+
+        let (resolution, window_rect) =
+            renderer.resolution_and_rect.get_or_insert(([viewport[2], viewport[3]], rect));
+
+        // Compare previously saved to current
+        if viewport[2] != resolution[0]
+            || viewport[3] != resolution[1]
+            || rect.right != window_rect.right
+            || rect.bottom != window_rect.bottom
+        {
+            renderer.cleanup();
+            glClearColor(0.0, 0.0, 0.0, 1.0);
+            IMGUI_RENDERER.take();
+        }
     }
 }
