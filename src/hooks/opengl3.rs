@@ -156,6 +156,7 @@ unsafe fn reset(hdc: HDC) {
 
 static mut IMGUI_RENDER_LOOP: OnceLock<Box<dyn ImguiRenderLoop + Send + Sync>> = OnceLock::new();
 static mut IMGUI_RENDERER: Option<Mutex<Box<ImguiRenderer>>> = None;
+
 static mut EGUI_RENDERER: Option<Mutex<Box<EguiRenderer>>> = None;
 static TRAMPOLINE: OnceLock<OpenGl32wglSwapBuffers> = OnceLock::new();
 
