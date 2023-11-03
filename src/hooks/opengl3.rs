@@ -304,3 +304,56 @@ impl Hooks for ImguiOpenGl3Hooks {
         drop(IMGUI_RENDER_LOOP.take());
     }
 }
+
+// EGUI
+
+/// Stores hook detours and implements the [`Hooks`] trait.
+pub struct EguiOpenGl3Hooks([MhHook; 1]);
+
+impl EguiOpenGl3Hooks {
+    /// # Safety
+    ///
+    /// Is most likely undefined behavior, as it modifies function pointers at
+    /// runtime.
+    pub unsafe fn new<T: 'static>(t: T) -> Self
+    where
+        T: ImguiRenderLoop + Send + Sync,
+    {
+        // Grab the addresses
+        let hook_opengl_swapbuffers_address = get_opengl_wglswapbuffers_addr();
+
+        // Create detours
+        let hook_opengl_wgl_swap_buffers = MhHook::new(
+            hook_opengl_swapbuffers_address as *mut _,
+            imgui_opengl32_wglSwapBuffers_impl as *mut _,
+        )
+        .expect("couldn't create opengl32.wglSwapBuffers hook");
+
+        // Initialize the render loop and store detours
+        IMGUI_RENDER_LOOP.get_or_init(|| Box::new(t));
+        TRAMPOLINE.get_or_init(|| std::mem::transmute(hook_opengl_wgl_swap_buffers.trampoline()));
+
+        Self([hook_opengl_wgl_swap_buffers])
+    }
+}
+
+impl Hooks for EguiOpenGl3Hooks {
+    fn from_render_loop<T>(t: T) -> Box<Self>
+    where
+        Self: Sized,
+        T: ImguiRenderLoop + Send + Sync + 'static,
+    {
+        Box::new(unsafe { EguiOpenGl3Hooks::new(t) })
+    }
+
+    fn hooks(&self) -> &[MhHook] {
+        &self.0
+    }
+
+    unsafe fn unhook(&mut self) {
+        if let Some(renderer) = IMGUI_RENDERER.take() {
+            renderer.lock().cleanup();
+        }
+        drop(IMGUI_RENDER_LOOP.take());
+    }
+}
