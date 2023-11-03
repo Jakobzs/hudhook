@@ -156,6 +156,7 @@ unsafe fn reset(hdc: HDC) {
 
 static mut IMGUI_RENDER_LOOP: OnceLock<Box<dyn ImguiRenderLoop + Send + Sync>> = OnceLock::new();
 static mut IMGUI_RENDERER: Option<Mutex<Box<ImguiRenderer>>> = None;
+static mut EGUI_RENDERER: Option<Mutex<Box<EguiRenderer>>> = None;
 static TRAMPOLINE: OnceLock<OpenGl32wglSwapBuffers> = OnceLock::new();
 
 struct ImguiRenderer {
@@ -164,6 +165,58 @@ struct ImguiRenderer {
     wnd_proc: WndProcType,
     game_hwnd: HWND,
     resolution_and_rect: Option<([i32; 2], RECT)>,
+}
+
+struct EguiRenderer {
+    wnd_proc: WndProcType,
+    game_hwnd: HWND,
+    resolution_and_rect: Option<([i32; 2], RECT)>,
+}
+
+impl EguiRenderer {
+    /*
+    unsafe fn render(&mut self) {
+        if let Some(rect) = get_client_rect(&self.game_hwnd) {
+            let io = self.ctx.io_mut();
+            io.display_size = [(rect.right - rect.left) as f32, (rect.bottom - rect.top) as f32];
+            let mut pos = POINT { x: 0, y: 0 };
+
+            let active_window = GetForegroundWindow();
+            if !HANDLE(active_window.0).is_invalid()
+                && (active_window == self.game_hwnd
+                    || IsChild(active_window, self.game_hwnd).as_bool())
+            {
+                let gcp = GetCursorPos(&mut pos as *mut _);
+                if gcp.is_ok() && ScreenToClient(self.game_hwnd, &mut pos as *mut _).as_bool() {
+                    io.mouse_pos[0] = pos.x as _;
+                    io.mouse_pos[1] = pos.y as _;
+                }
+            }
+        } else {
+            trace!("GetClientRect error: {:?}", GetLastError());
+        }
+
+        // Update the delta time of ImGui as to tell it how long has elapsed since the
+        // last frame
+        let last_frame = LAST_FRAME.get_or_insert_with(|| Mutex::new(Instant::now())).get_mut();
+        let now = Instant::now();
+        self.ctx.io_mut().update_delta_time(now.duration_since(*last_frame));
+        *last_frame = now;
+
+        let ui = self.ctx.frame();
+
+        IMGUI_RENDER_LOOP.get_mut().unwrap().render(ui);
+        self.renderer.render(&mut self.ctx);
+    }
+    */
+
+    unsafe fn cleanup(&mut self) {
+        #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+        SetWindowLongPtrA(self.game_hwnd, GWLP_WNDPROC, self.wnd_proc as usize as isize);
+
+        #[cfg(target_arch = "x86")]
+        SetWindowLongA(self.game_hwnd, GWLP_WNDPROC, self.wnd_proc as usize as i32);
+    }
 }
 
 fn get_client_rect(hwnd: &HWND) -> Option<RECT> {
@@ -444,10 +497,10 @@ unsafe extern "system" fn egui_wnd_proc(
 unsafe extern "system" fn egui_opengl32_wglSwapBuffers_impl(dc: HDC) {
     trace!("opengl32.wglSwapBuffers invoked");
 
-    // Draw ImGui
+    // Draw Egui
     egui_draw(dc);
 
-    // If resolution or window rect changes - reset ImGui
+    // If resolution or window rect changes - reset Egui
     egui_reset(dc);
 
     // Get the trampoline
@@ -459,11 +512,11 @@ unsafe extern "system" fn egui_opengl32_wglSwapBuffers_impl(dc: HDC) {
 }
 
 unsafe fn egui_reset(hdc: HDC) {
-    if IMGUI_RENDERER.is_none() {
+    if EGUI_RENDERER.is_none() {
         return;
     }
 
-    if let Some(mut renderer) = IMGUI_RENDERER.as_mut().unwrap().try_lock() {
+    if let Some(mut renderer) = EGUI_RENDERER.as_mut().unwrap().try_lock() {
         // Get resolution
         let viewport = &mut [0; 4];
         glGetIntegerv(GL_VIEWPORT, viewport.as_mut_ptr());
@@ -482,7 +535,7 @@ unsafe fn egui_reset(hdc: HDC) {
         {
             renderer.cleanup();
             glClearColor(0.0, 0.0, 0.0, 1.0);
-            IMGUI_RENDERER.take();
+            EGUI_RENDERER.take();
         }
     }
 }
