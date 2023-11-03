@@ -27,6 +27,8 @@ use crate::renderers::imgui_opengl3::get_proc_address;
 
 type OpenGl32wglSwapBuffers = unsafe extern "system" fn(HDC) -> ();
 
+mod egui;
+
 unsafe fn draw(dc: HDC) {
     // Get the imgui renderer, or create it if it does not exist
     let mut imgui_renderer = IMGUI_RENDERER
