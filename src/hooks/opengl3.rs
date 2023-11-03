@@ -305,7 +305,9 @@ impl Hooks for ImguiOpenGl3Hooks {
     }
 }
 
+//
 // EGUI
+//
 
 /// Stores hook detours and implements the [`Hooks`] trait.
 pub struct EguiOpenGl3Hooks([MhHook; 1]);
