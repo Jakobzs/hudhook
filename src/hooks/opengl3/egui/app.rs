@@ -2,6 +2,7 @@ use crate::{input::InputCollector, painter, utils};
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use egui::Context;
 use once_cell::sync::OnceCell;
+use parking_lot::lock_api;
 use std::ops::DerefMut;
 use windows::Win32::{
     Foundation::{HWND, LPARAM, RECT, WPARAM},
@@ -43,10 +44,7 @@ pub struct OpenGLApp<T = ()> {
 impl<T> OpenGLApp<T> {
     /// Creates new [`OpenGLApp`] in const context. You are supposed to create a single static item to store the application state.
     pub const fn new() -> Self {
-        Self {
-            data: Mutex::new(None),
-            hwnd: OnceCell::new(),
-        }
+        Self { data: Mutex::new(None), hwnd: OnceCell::new() }
     }
 
     /// Checks if the app is ready to draw and if it's safe to invoke `render`, `wndproc`, etc.
@@ -225,15 +223,9 @@ impl<T> OpenGLApp<T> {
     fn get_client_rect(&self) -> (u32, u32) {
         let mut rect = RECT::default();
         unsafe {
-            GetClientRect(
-                *expect!(self.hwnd.get(), "You need to call init first"),
-                &mut rect,
-            );
+            GetClientRect(*expect!(self.hwnd.get(), "You need to call init first"), &mut rect);
         }
 
-        (
-            (rect.right - rect.left) as u32,
-            (rect.bottom - rect.top) as u32,
-        )
+        ((rect.right - rect.left) as u32, (rect.bottom - rect.top) as u32)
     }
 }
