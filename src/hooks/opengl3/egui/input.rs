@@ -44,11 +44,7 @@ pub enum InputResult {
 
 impl InputCollector {
     pub fn new(hwnd: HWND) -> Self {
-        Self {
-            hwnd,
-            events: vec![],
-            modifiers: None,
-        }
+        Self { hwnd, events: vec![], modifiers: None }
     }
 
     pub fn process(&mut self, umsg: u32, wparam: usize, lparam: isize) -> InputResult {
@@ -58,7 +54,7 @@ impl InputCollector {
 
                 self.events.push(Event::PointerMoved(get_pos(lparam)));
                 InputResult::MouseMove
-            }
+            },
             WM_LBUTTONDOWN | WM_LBUTTONDBLCLK => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -70,7 +66,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseLeft
-            }
+            },
             WM_LBUTTONUP => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -82,7 +78,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseLeft
-            }
+            },
             WM_RBUTTONDOWN | WM_RBUTTONDBLCLK => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -94,7 +90,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseRight
-            }
+            },
             WM_RBUTTONUP => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -106,7 +102,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseRight
-            }
+            },
             WM_MBUTTONDOWN | WM_MBUTTONDBLCLK => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -118,7 +114,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseMiddle
-            }
+            },
             WM_MBUTTONUP => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -130,7 +126,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseMiddle
-            }
+            },
             WM_XBUTTONDOWN | WM_XBUTTONDBLCLK => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -148,7 +144,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseMiddle
-            }
+            },
             WM_XBUTTONUP => {
                 let modifiers = get_mouse_modifiers(wparam);
                 self.alter_modifiers(modifiers);
@@ -166,7 +162,7 @@ impl InputCollector {
                     modifiers,
                 });
                 InputResult::MouseMiddle
-            }
+            },
             WM_CHAR => {
                 if let Some(ch) = char::from_u32(wparam as _) {
                     if !ch.is_control() {
@@ -174,35 +170,33 @@ impl InputCollector {
                     }
                 }
                 InputResult::Character
-            }
+            },
             WM_MOUSEWHEEL => {
                 self.alter_modifiers(get_mouse_modifiers(wparam));
 
                 let delta = (wparam >> 16) as i16 as f32 * 10. / WHEEL_DELTA as f32;
 
                 if wparam & MK_CONTROL.0 as usize != 0 {
-                    self.events
-                        .push(Event::Zoom(if delta > 0. { 1.5 } else { 0.5 }));
+                    self.events.push(Event::Zoom(if delta > 0. { 1.5 } else { 0.5 }));
                     InputResult::Zoom
                 } else {
                     self.events.push(Event::Scroll(Vec2::new(0., delta)));
                     InputResult::Scroll
                 }
-            }
+            },
             WM_MOUSEHWHEEL => {
                 self.alter_modifiers(get_mouse_modifiers(wparam));
 
                 let delta = (wparam >> 16) as i16 as f32 * 10. / WHEEL_DELTA as f32;
 
                 if wparam & MK_CONTROL.0 as usize != 0 {
-                    self.events
-                        .push(Event::Zoom(if delta > 0. { 1.5 } else { 0.5 }));
+                    self.events.push(Event::Zoom(if delta > 0. { 1.5 } else { 0.5 }));
                     InputResult::Zoom
                 } else {
                     self.events.push(Event::Scroll(Vec2::new(delta, 0.)));
                     InputResult::Scroll
                 }
-            }
+            },
             msg @ (WM_KEYDOWN | WM_SYSKEYDOWN) => {
                 let modifiers = get_key_modifiers(msg);
                 self.modifiers = Some(modifiers);
@@ -230,7 +224,7 @@ impl InputCollector {
                     });
                 }
                 InputResult::Key
-            }
+            },
             msg @ (WM_KEYUP | WM_SYSKEYUP) => {
                 let modifiers = get_key_modifiers(msg);
                 self.modifiers = Some(modifiers);
@@ -244,7 +238,7 @@ impl InputCollector {
                     });
                 }
                 InputResult::Key
-            }
+            },
             _ => InputResult::Unknown,
         }
     }
@@ -291,18 +285,12 @@ impl InputCollector {
             GetClientRect(self.hwnd, &mut rect);
         }
 
-        Pos2::new(
-            (rect.right - rect.left) as f32,
-            (rect.bottom - rect.top) as f32,
-        )
+        Pos2::new((rect.right - rect.left) as f32, (rect.bottom - rect.top) as f32)
     }
 
     #[inline]
     pub fn get_screen_rect(&self) -> Rect {
-        Rect {
-            min: Pos2::ZERO,
-            max: self.get_screen_size(),
-        }
+        Rect { min: Pos2::ZERO, max: self.get_screen_size() }
     }
 }
 
@@ -327,13 +315,7 @@ fn get_key_modifiers(msg: u32) -> Modifiers {
     let ctrl = unsafe { GetAsyncKeyState(VK_CONTROL.0 as _) != 0 };
     let shift = unsafe { GetAsyncKeyState(VK_LSHIFT.0 as _) != 0 };
 
-    Modifiers {
-        alt: msg == WM_SYSKEYDOWN,
-        mac_cmd: false,
-        command: ctrl,
-        shift,
-        ctrl,
-    }
+    Modifiers { alt: msg == WM_SYSKEYDOWN, mac_cmd: false, command: ctrl, shift, ctrl }
 }
 
 fn get_key(wparam: usize) -> Option<Key> {
