@@ -1,7 +1,9 @@
 use std::ffi::CString;
-use std::sync::OnceLock;
+use std::sync::{Once, OnceLock};
 use std::time::Instant;
 
+use ::egui::{Color32, RichText};
+use egui::Widget;
 use imgui::Context;
 use parking_lot::Mutex;
 use tracing::{debug, trace};
@@ -27,9 +29,11 @@ use crate::hooks::{Hooks, ImguiRenderLoop};
 use crate::mh::MhHook;
 use crate::renderers::imgui_opengl3::get_proc_address;
 
+use self::eguii::OpenGLApp;
+
 type OpenGl32wglSwapBuffers = unsafe extern "system" fn(HDC) -> ();
 
-mod egui;
+mod eguii;
 
 unsafe fn draw(dc: HDC) {
     // Get the imgui renderer, or create it if it does not exist
@@ -384,9 +388,23 @@ impl Hooks for EguiOpenGl3Hooks {
     }
 }
 
+static mut APP: OpenGLApp<i32> = OpenGLApp::new();
+
 unsafe fn egui_draw(dc: HDC) {
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        println!("wglSwapBuffers successfully hooked.");
+
+        let window = WindowFromDC(dc);
+        APP.init_default(dc, window, uii);
+    });
+
+    APP.render(dc);
+    //WglSwapBuffersHook.call(dc)
+
     // Get the imgui renderer, or create it if it does not exist
-    let mut egui_renderer = EGUI_RENDERER
+
+    /*let mut egui_renderer = EGUI_RENDERER
         .get_or_insert_with(|| {
             // Create ImGui context
             let mut context = imgui::Context::create();
@@ -429,7 +447,72 @@ unsafe fn egui_draw(dc: HDC) {
         })
         .lock();
 
-    egui_renderer.render(dc);
+    egui_renderer.render(dc);*/
+}
+
+fn uii(ctx: &egui::Context, _: &mut i32) {
+    unsafe {
+        egui::containers::Window::new("Main menu").show(ctx, |ui| {
+            test_ui(ctx, ui);
+
+            ui.separator();
+            if ui.button("exit").clicked() {
+                //EXITING = true;
+            }
+        });
+    }
+}
+
+unsafe fn test_ui(ctx: &egui::Context, ui: &mut egui::Ui) {
+    // You should not use statics like this, it's made
+    // this way for the sake of example.
+    static mut UI_CHECK: bool = true;
+    static mut TEXT: Option<String> = None;
+    static mut VALUE: f32 = 0.;
+    static mut COLOR: [f32; 3] = [0., 0., 0.];
+    static ONCE: Once = Once::new();
+
+    ONCE.call_once(|| {});
+
+    if TEXT.is_none() {
+        TEXT = Some(String::from("Test"));
+    }
+    ui.label(RichText::new("Test").color(Color32::LIGHT_BLUE));
+    ui.label(RichText::new("Other").color(Color32::WHITE));
+    ui.separator();
+
+    let input = ctx.input(|input| input.pointer.clone());
+    ui.label(format!(
+        "X1: {} X2: {}",
+        input.button_down(egui::PointerButton::Extra1),
+        input.button_down(egui::PointerButton::Extra2)
+    ));
+
+    let mods = ui.input(|input| input.modifiers);
+    ui.label(format!("Ctrl: {} Shift: {} Alt: {}", mods.ctrl, mods.shift, mods.alt));
+
+    if ui.input(|input| {
+        input.modifiers.matches(egui::Modifiers::CTRL) && input.key_pressed(egui::Key::R)
+    }) {
+        println!("Pressed");
+    }
+
+    ui.checkbox(&mut UI_CHECK, "Some checkbox");
+    ui.text_edit_singleline(TEXT.as_mut().unwrap());
+    egui::ScrollArea::vertical().max_height(200.).show(ui, |ui| {
+        for i in 1..=100 {
+            ui.label(format!("Label: {}", i));
+        }
+    });
+
+    egui::Slider::new(&mut VALUE, -1.0..=1.0).ui(ui);
+
+    ui.color_edit_button_rgb(&mut COLOR);
+
+    ui.label(format!(
+        "{:?}",
+        &ui.input(|input| input.pointer.button_down(egui::PointerButton::Primary))
+    ));
 }
 
 unsafe extern "system" fn egui_wnd_proc(

@@ -1,4 +1,4 @@
-use crate::hooks::opengl3::egui::{input::InputCollector, painter, utils};
+use crate::hooks::opengl3::eguii::{input::InputCollector, painter, utils};
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use egui::Context;
 use once_cell::sync::OnceCell;
