@@ -1,4 +1,4 @@
-use crate::shader;
+use crate::hooks::opengl3::egui::shader;
 use egui::{
     emath::Rect,
     epaint::{Mesh, Primitive},
@@ -170,11 +170,7 @@ impl Painter {
         let screen_size_points = screen_size_pixels / pixels_per_point;
 
         unsafe {
-            gl::Uniform2f(
-                u_screen_size_loc,
-                screen_size_points.x,
-                screen_size_points.y,
-            );
+            gl::Uniform2f(u_screen_size_loc, screen_size_points.x, screen_size_points.y);
         }
 
         let u_sampler = CString::new("u_sampler").unwrap();
@@ -185,22 +181,18 @@ impl Painter {
             gl::Viewport(0, 0, client_rect.0 as i32, client_rect.1 as i32);
         }
 
-        for egui::ClippedPrimitive {
-            clip_rect,
-            primitive,
-        } in clipped_primitives
-        {
+        for egui::ClippedPrimitive { clip_rect, primitive } in clipped_primitives {
             match primitive {
                 Primitive::Mesh(mesh) => {
                     self.paint_mesh(mesh, clip_rect, pixels_per_point, client_rect);
                     unsafe {
                         gl::Disable(gl::SCISSOR_TEST);
                     }
-                }
+                },
 
                 Primitive::Callback(_) => {
                     panic!("Custom rendering callbacks are not implemented in egui_glium");
-                }
+                },
             }
         }
 
@@ -228,25 +220,15 @@ impl Painter {
         let pixels: Vec<u8> = srgba_pixels.iter().flat_map(|a| a.to_array()).collect();
         let id = egui::TextureId::User(self.textures.len() as u64);
 
-        self.textures.insert(
-            id,
-            UserTexture {
-                size,
-                pixels,
-                gl_texture_id: None,
-                filtering,
-                dirty: true,
-            },
-        );
+        self.textures
+            .insert(id, UserTexture { size, pixels, gl_texture_id: None, filtering, dirty: true });
 
         id
     }
 
     pub fn update_user_texture_data(&mut self, texture_id: &egui::TextureId, pixels: &[Color32]) {
-        let texture = self
-            .textures
-            .get_mut(texture_id)
-            .expect("Texture with id has not been created");
+        let texture =
+            self.textures.get_mut(texture_id).expect("Texture with id has not been created");
 
         texture.pixels = pixels.iter().flat_map(|a| a.to_array()).collect();
         texture.dirty = true;
@@ -265,8 +247,7 @@ impl Painter {
             unsafe {
                 gl::BindTexture(
                     gl::TEXTURE_2D,
-                    it.gl_texture_id
-                        .expect("Texture should have a valid OpenGL id now"),
+                    it.gl_texture_id.expect("Texture should have a valid OpenGL id now"),
                 );
             }
 
@@ -442,7 +423,7 @@ impl Painter {
                             image.pixels.iter().flat_map(|a| a.to_array()).collect();
 
                         texture.update_texture_part(x as _, y as _, w as _, h as _, &data);
-                    }
+                    },
 
                     egui::ImageData::Font(image) => {
                         assert_eq!(
@@ -452,13 +433,11 @@ impl Painter {
                         );
 
                         let gamma = 1.0;
-                        let data: Vec<u8> = image
-                            .srgba_pixels(Some(gamma))
-                            .flat_map(|a| a.to_array())
-                            .collect();
+                        let data: Vec<u8> =
+                            image.srgba_pixels(Some(gamma)).flat_map(|a| a.to_array()).collect();
 
                         texture.update_texture_part(x as _, y as _, w as _, h as _, &data);
-                    }
+                    },
                 }
             } else {
                 eprintln!("Failed to find egui texture {:?}", tex_id);
@@ -481,7 +460,7 @@ impl Painter {
                         filtering: TextureFilter::Linear,
                         dirty: true,
                     }
-                }
+                },
                 egui::ImageData::Font(image) => {
                     assert_eq!(
                         image.width() * image.height(),
@@ -490,10 +469,8 @@ impl Painter {
                     );
 
                     let gamma = 1.0;
-                    let pixels = image
-                        .srgba_pixels(Some(gamma))
-                        .flat_map(|a| a.to_array())
-                        .collect();
+                    let pixels =
+                        image.srgba_pixels(Some(gamma)).flat_map(|a| a.to_array()).collect();
 
                     UserTexture {
                         size: (w, h),
@@ -502,7 +479,7 @@ impl Painter {
                         filtering: TextureFilter::Linear,
                         dirty: true,
                     }
-                }
+                },
             };
 
             let previous = self.textures.insert(tex_id, texture);
@@ -569,7 +546,7 @@ impl Painter {
                             },
                         }
                         user_texture.gl_texture_id = Some(gl_texture);
-                    }
+                    },
                 }
 
                 if !pixels.is_empty() {
