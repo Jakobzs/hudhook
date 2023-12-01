@@ -35,7 +35,7 @@ pub trait ImguiRenderLoop {
     /// If this function returns true, the WndProc function will not call the
     /// procedure of the parent window.
     fn should_block_messages(&self, _io: &Io) -> bool {
-        false   
+        false
     }
 
     fn into_hook<T>(self) -> Box<T>
