@@ -268,7 +268,7 @@ impl InputCollector {
     pub fn get_system_time() -> f64 {
         let mut time = 0;
         unsafe {
-            NtQuerySystemTime(&mut time);
+            NtQuerySystemTime(&mut time).unwrap();
         }
 
         // dumb ass, read the docs. egui clearly says `in seconds`.
@@ -282,7 +282,7 @@ impl InputCollector {
     pub fn get_screen_size(&self) -> Pos2 {
         let mut rect = RECT::default();
         unsafe {
-            GetClientRect(self.hwnd, &mut rect);
+            GetClientRect(self.hwnd, &mut rect).unwrap();
         }
 
         Pos2::new((rect.right - rect.left) as f32, (rect.bottom - rect.top) as f32)
