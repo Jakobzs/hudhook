@@ -547,10 +547,15 @@ unsafe extern "system" fn egui_opengl32_wglSwapBuffers_impl(dc: HDC) {
     trace!("opengl32.wglSwapBuffers invoked");
 
     // Draw Egui
-    egui_draw(dc);
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        println!("wglSwapBuffers successfully hooked.");
 
-    // If resolution or window rect changes - reset Egui
-    egui_reset(dc);
+        let window = WindowFromDC(dc);
+        APP.init_default(dc, window, uii);
+    });
+
+    APP.render(dc);
 
     // Get the trampoline
     let trampoline_wglswapbuffers =
@@ -564,7 +569,7 @@ unsafe fn egui_reset(hdc: HDC) {
     if EGUI_RENDERER.is_none() {
         return;
     }
-
+    /*
     if let Some(mut renderer) = EGUI_RENDERER.as_mut().unwrap().try_lock() {
         // Get resolution
         let viewport = &mut [0; 4];
@@ -587,4 +592,5 @@ unsafe fn egui_reset(hdc: HDC) {
             EGUI_RENDERER.take();
         }
     }
+    */
 }
