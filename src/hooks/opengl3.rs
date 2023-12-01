@@ -10,7 +10,9 @@ use windows::Win32::Foundation::{
     GetLastError, HANDLE, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM,
 };
 use windows::Win32::Graphics::Gdi::{ScreenToClient, WindowFromDC, HDC};
-use windows::Win32::Graphics::OpenGL::{glClearColor, glGetIntegerv, GL_VIEWPORT};
+use windows::Win32::Graphics::OpenGL::{
+    glClearColor, glGetIntegerv, wglGetCurrentContext, wglMakeCurrent, GL_VIEWPORT,
+};
 use windows::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
 #[cfg(target_arch = "x86")]
 use windows::Win32::UI::WindowsAndMessaging::SetWindowLongA;
@@ -177,41 +179,7 @@ struct EguiRenderer {
 }
 
 impl EguiRenderer {
-    /*
-    unsafe fn render(&mut self) {
-        if let Some(rect) = get_client_rect(&self.game_hwnd) {
-            let io = self.ctx.io_mut();
-            io.display_size = [(rect.right - rect.left) as f32, (rect.bottom - rect.top) as f32];
-            let mut pos = POINT { x: 0, y: 0 };
-
-            let active_window = GetForegroundWindow();
-            if !HANDLE(active_window.0).is_invalid()
-                && (active_window == self.game_hwnd
-                    || IsChild(active_window, self.game_hwnd).as_bool())
-            {
-                let gcp = GetCursorPos(&mut pos as *mut _);
-                if gcp.is_ok() && ScreenToClient(self.game_hwnd, &mut pos as *mut _).as_bool() {
-                    io.mouse_pos[0] = pos.x as _;
-                    io.mouse_pos[1] = pos.y as _;
-                }
-            }
-        } else {
-            trace!("GetClientRect error: {:?}", GetLastError());
-        }
-
-        // Update the delta time of ImGui as to tell it how long has elapsed since the
-        // last frame
-        let last_frame = LAST_FRAME.get_or_insert_with(|| Mutex::new(Instant::now())).get_mut();
-        let now = Instant::now();
-        self.ctx.io_mut().update_delta_time(now.duration_since(*last_frame));
-        *last_frame = now;
-
-        let ui = self.ctx.frame();
-
-        IMGUI_RENDER_LOOP.get_mut().unwrap().render(ui);
-        self.renderer.render(&mut self.ctx);
-    }
-    */
+    unsafe fn render(&mut self, hdc: HDC) {}
 
     unsafe fn cleanup(&mut self) {
         #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
@@ -418,7 +386,7 @@ impl Hooks for EguiOpenGl3Hooks {
 
 unsafe fn egui_draw(dc: HDC) {
     // Get the imgui renderer, or create it if it does not exist
-    let mut imgui_renderer = IMGUI_RENDERER
+    let mut egui_renderer = EGUI_RENDERER
         .get_or_insert_with(|| {
             // Create ImGui context
             let mut context = imgui::Context::create();
@@ -450,23 +418,18 @@ unsafe fn egui_draw(dc: HDC) {
             ));
 
             // Create the imgui rendererer
-            let mut imgui_renderer = ImguiRenderer {
-                ctx: context,
-                renderer,
-                wnd_proc,
-                game_hwnd: hwnd,
-                resolution_and_rect: None,
-            };
+            let egui_renderer =
+                EguiRenderer { wnd_proc, game_hwnd: hwnd, resolution_and_rect: None };
 
             // Initialize window events on the imgui renderer
-            ImguiWindowsEventHandler::setup_io(&mut imgui_renderer);
+            //ImguiWindowsEventHandler::setup_io(&mut egui_renderer);
 
             // Return the imgui renderer as a mutex
-            Mutex::new(Box::new(imgui_renderer))
+            Mutex::new(Box::new(egui_renderer))
         })
         .lock();
 
-    imgui_renderer.render();
+    egui_renderer.render(dc);
 }
 
 unsafe extern "system" fn egui_wnd_proc(
