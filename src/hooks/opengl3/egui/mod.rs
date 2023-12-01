@@ -1,6 +1,7 @@
 mod app;
+pub use app::OpenGLApp;
+
 mod input;
-mod lib;
 mod painter;
 mod shader;
-mod utils;
+pub mod utils;

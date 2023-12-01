@@ -1,9 +1,9 @@
-use crate::{input::InputCollector, painter, utils};
+use crate::hooks::opengl3::egui::{input::InputCollector, painter, utils};
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use egui::Context;
 use once_cell::sync::OnceCell;
 use parking_lot::lock_api;
-use std::ops::DerefMut;
+use std::{ops::DerefMut, sync::Mutex};
 use windows::Win32::{
     Foundation::{HWND, LPARAM, RECT, WPARAM},
     Graphics::{
@@ -64,11 +64,11 @@ impl<T> OpenGLApp<T> {
     ) {
         unsafe {
             if self.hwnd.get().is_some() {
-                panic_msg!("You must call init only once");
+                //panic_msg!("You must call init only once");
             }
 
             if window.0 == -1 {
-                panic_msg!("Invalid output window descriptor");
+                //panic_msg!("Invalid output window descriptor");
             }
 
             let _ = self.hwnd.set(window);
@@ -82,7 +82,7 @@ impl<T> OpenGLApp<T> {
 
             let painter = painter::Painter::new();
 
-            *self.data.lock() = Some(AppData {
+            *self.data.lock().unwrap() = Some(AppData {
                 input_collector: InputCollector::new(window),
                 ui: Box::new(ui),
                 gl_context,
