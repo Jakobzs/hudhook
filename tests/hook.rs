@@ -2,7 +2,7 @@ use std::io::Cursor;
 use std::time::{Duration, Instant};
 
 use hudhook::renderer::RenderEngine;
-use hudhook::ImguiRenderLoop;
+use hudhook::EguiRenderLoop;
 use image::io::Reader as ImageReader;
 use image::{EncodableLayout, RgbaImage};
 use imgui::{Condition, Image, StyleColor, TextureId};
@@ -63,7 +63,7 @@ impl Default for HookExample {
     }
 }
 
-impl ImguiRenderLoop for HookExample {
+impl EguiRenderLoop for HookExample {
     fn initialize(&mut self, render_engine: &mut RenderEngine) {
         self.image_id = render_engine
             .load_image(self.image.as_bytes(), self.image.width() as _, self.image.height() as _)

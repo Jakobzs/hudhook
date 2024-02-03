@@ -53,9 +53,9 @@ unsafe fn get_opengl_wglswapbuffers_addr() -> OpenGl32wglSwapBuffersType {
 }
 
 /// Stores hook detours and implements the [`Hooks`] trait.
-pub struct ImguiOpenGl3Hooks([MhHook; 1]);
+pub struct EguiOpenGl3Hooks([MhHook; 1]);
 
-impl ImguiOpenGl3Hooks {
+impl EguiOpenGl3Hooks {
     /// Construct a set of [`MhHook`]s that will render UI via the
     /// provided [`ImguiRenderLoop`].
     ///
@@ -91,13 +91,13 @@ impl ImguiOpenGl3Hooks {
     }
 }
 
-impl Hooks for ImguiOpenGl3Hooks {
+impl Hooks for EguiOpenGl3Hooks {
     fn from_render_loop<T>(t: T) -> Box<Self>
     where
         Self: Sized,
         T: EguiRenderLoop + Send + Sync + 'static,
     {
-        Box::new(unsafe { ImguiOpenGl3Hooks::new(t) })
+        Box::new(unsafe { EguiOpenGl3Hooks::new(t) })
     }
 
     fn hooks(&self) -> &[MhHook] {
