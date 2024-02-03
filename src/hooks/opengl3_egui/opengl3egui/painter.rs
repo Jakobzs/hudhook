@@ -1,4 +1,4 @@
-use crate::hooks::opengl3::eguii::shader;
+use crate::hooks::opengl3_egui::opengl3egui::shader;
 use egui::{
     emath::Rect,
     epaint::{Mesh, Primitive},
