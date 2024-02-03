@@ -56,6 +56,8 @@ struct FrameContext {
     fence_event: HANDLE,
 }
 
+pub type DrawIdx = std::os::raw::c_ushort;
+
 impl FrameContext {
     unsafe fn new(
         device: &ID3D12Device,
@@ -165,7 +167,7 @@ impl FrameResources {
             let desc = D3D12_RESOURCE_DESC {
                 Dimension: D3D12_RESOURCE_DIMENSION_BUFFER,
                 Alignment: 0,
-                Width: (self.index_buffer_size * size_of::<imgui::DrawIdx>()) as u64,
+                Width: (self.index_buffer_size * size_of::<DrawIdx>()) as u64,
                 Height: 1,
                 DepthOrArraySize: 1,
                 MipLevels: 1,
@@ -403,7 +405,7 @@ impl RenderEngine {
         let cpu_desc = unsafe { textures_heap.GetCPUDescriptorHandleForHeapStart() };
         let gpu_desc = unsafe { textures_heap.GetGPUDescriptorHandleForHeapStart() };
 
-        let mut ctx = Context::create();
+        let mut ctx = Context::default();
         /*
         ctx.set_ini_filename(None);
         ctx.io_mut().backend_flags |= BackendFlags::RENDERER_HAS_VTX_OFFSET;
