@@ -14,7 +14,7 @@ use windows::Win32::UI::Input::{
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 use crate::renderer::{RenderEngine, RenderState};
-use crate::ImguiRenderLoop;
+use crate::EguiRenderLoop;
 
 pub type WndProcType =
     unsafe extern "system" fn(hwnd: HWND, umsg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT;
@@ -248,7 +248,7 @@ pub fn imgui_wnd_proc_impl<T>(
     imgui_render_loop: T,
 ) -> LRESULT
 where
-    T: AsRef<dyn Send + Sync + ImguiRenderLoop + 'static>,
+    T: AsRef<dyn Send + Sync + EguiRenderLoop + 'static>,
 {
     let ctx = render_engine.ctx();
     let mut ctx = ctx.borrow_mut();

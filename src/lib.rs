@@ -209,30 +209,7 @@ pub fn eject() {
     });
 }
 
-/// Implement your `imgui` rendering logic via this trait.
-pub trait ImguiRenderLoop {
-    /// Called once at the first occurrence of the hook. Implement this to
-    /// initialize your data.
-    fn initialize(&mut self, _render_engine: &mut RenderEngine) {}
-
-    /// Called every frame. Use the provided `ui` object to build your UI.
-    fn render(&mut self, ui: &mut Ui);
-
-    /// Called before rendering each frame. Use the provided `ctx` object to
-    /// modify imgui settings before rendering the UI.
-    fn before_render(&mut self, _render_engine: &mut RenderEngine) {}
-
-    /// Called during the window procedure.
-    fn on_wnd_proc(&self, _hwnd: HWND, _umsg: u32, _wparam: WPARAM, _lparam: LPARAM) {}
-
-    /// If this function returns `true`, the WndProc function will not call the
-    /// procedure of the parent window.
-    fn should_block_messages(&self, _io: &Io) -> bool {
-        false
-    }
-}
-
-/// Implement your `emgui` rendering logic via this trait.
+/// Implement your `egui` rendering logic via this trait.
 pub trait EguiRenderLoop {
     /// Called once at the first occurrence of the hook. Implement this to
     /// initialize your data.
@@ -271,7 +248,7 @@ pub trait Hooks {
     fn from_render_loop<T>(t: T) -> Box<Self>
     where
         Self: Sized,
-        T: ImguiRenderLoop + Send + Sync + 'static;
+        T: EguiRenderLoop + Send + Sync + 'static;
 
     /// Return the list of hooks to be enabled, in order.
     fn hooks(&self) -> &[MhHook];
@@ -387,7 +364,7 @@ impl HudhookBuilder {
     /// Add a hook object.
     pub fn with<T: Hooks + 'static>(
         mut self,
-        render_loop: impl ImguiRenderLoop + Send + Sync + 'static,
+        render_loop: impl EguiRenderLoop + Send + Sync + 'static,
     ) -> Self {
         self.0 .0.push(T::from_render_loop(render_loop));
         self

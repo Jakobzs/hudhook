@@ -23,7 +23,7 @@ use windows::Win32::Graphics::Dxgi::{
 use super::DummyHwnd;
 use crate::mh::MhHook;
 use crate::renderer::RenderState;
-use crate::{Hooks, ImguiRenderLoop};
+use crate::{EguiRenderLoop, Hooks};
 
 type DXGISwapChainPresentType =
     unsafe extern "system" fn(This: IDXGISwapChain, SyncInterval: u32, Flags: u32) -> HRESULT;
@@ -121,7 +121,7 @@ impl ImguiDx11Hooks {
     /// yolo
     pub unsafe fn new<T: 'static>(t: T) -> Self
     where
-        T: ImguiRenderLoop + Send + Sync,
+        T: EguiRenderLoop + Send + Sync,
     {
         let dxgi_swap_chain_present_addr = get_target_addrs();
 
@@ -145,7 +145,7 @@ impl Hooks for ImguiDx11Hooks {
     fn from_render_loop<T>(t: T) -> Box<Self>
     where
         Self: Sized,
-        T: ImguiRenderLoop + Send + Sync + 'static,
+        T: EguiRenderLoop + Send + Sync + 'static,
     {
         Box::new(unsafe { Self::new(t) })
     }

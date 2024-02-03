@@ -13,12 +13,12 @@ use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, GWLP_WNDPROC};
 
 use crate::renderer::input::{imgui_wnd_proc_impl, WndProcType};
 use crate::renderer::RenderEngine;
-use crate::ImguiRenderLoop;
+use crate::EguiRenderLoop;
 
 static mut GAME_HWND: OnceLock<HWND> = OnceLock::new();
 static mut WND_PROC: OnceLock<WndProcType> = OnceLock::new();
 static mut RENDER_ENGINE: OnceLock<Mutex<RenderEngine>> = OnceLock::new();
-static mut RENDER_LOOP: OnceLock<Box<dyn ImguiRenderLoop + Send + Sync>> = OnceLock::new();
+static mut RENDER_LOOP: OnceLock<Box<dyn EguiRenderLoop + Send + Sync>> = OnceLock::new();
 static RENDER_LOCK: AtomicBool = AtomicBool::new(false);
 
 /// Global renderer state manager.
@@ -75,7 +75,7 @@ impl RenderState {
     /// # Example
     ///
     /// Check [`ImguiDx12Hooks`](crate::hooks::dx12::ImguiDx12Hooks).
-    pub fn set_render_loop<T: ImguiRenderLoop + Send + Sync + 'static>(t: T) {
+    pub fn set_render_loop<T: EguiRenderLoop + Send + Sync + 'static>(t: T) {
         unsafe { RENDER_LOOP.get_or_init(|| Box::new(t)) };
     }
 

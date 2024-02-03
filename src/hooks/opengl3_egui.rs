@@ -9,7 +9,7 @@ use windows::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
 
 use crate::mh::MhHook;
 use crate::renderer::RenderState;
-use crate::{Hooks, ImguiRenderLoop};
+use crate::{EguiRenderLoop, Hooks};
 
 mod opengl3egui;
 
@@ -69,7 +69,7 @@ impl EguiOpenGl3Hooks {
     /// yolo
     pub unsafe fn new<T: 'static>(t: T) -> Self
     where
-        T: ImguiRenderLoop + Send + Sync,
+        T: EguiRenderLoop + Send + Sync,
     {
         // Grab the addresses
         let hook_opengl_swap_buffers_address = get_opengl_wglswapbuffers_addr();
@@ -97,7 +97,7 @@ impl Hooks for EguiOpenGl3Hooks {
     fn from_render_loop<T>(t: T) -> Box<Self>
     where
         Self: Sized,
-        T: ImguiRenderLoop + Send + Sync + 'static,
+        T: EguiRenderLoop + Send + Sync + 'static,
     {
         Box::new(unsafe { EguiOpenGl3Hooks::new(t) })
     }
