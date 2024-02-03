@@ -5,9 +5,6 @@ use std::ptr::{null, null_mut};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-pub use imgui;
-use imgui::internal::RawWrapper;
-use imgui::{BackendFlags, Context, DrawCmd, DrawData, DrawIdx, DrawVert, TextureId, Ui};
 use memoffset::offset_of;
 use tracing::{error, trace};
 use windows::core::{s, w, ComInterface, Result, PCSTR, PCWSTR};
@@ -1136,12 +1133,12 @@ impl RenderEngine {
                 display_pos[1] + display_size[1],
             ];
 
-            [[2. / (r - l), 0., 0., 0.], [0., 2. / (t - b), 0., 0.], [0., 0., 0.5, 0.], [
-                (r + l) / (l - r),
-                (t + b) / (b - t),
-                0.5,
-                1.0,
-            ]]
+            [
+                [2. / (r - l), 0., 0., 0.],
+                [0., 2. / (t - b), 0., 0.],
+                [0., 0., 0.5, 0.],
+                [(r + l) / (l - r), (t + b) / (b - t), 0.5, 1.0],
+            ]
         };
 
         trace!("Display size {}x{}", display_size[0], display_size[1]);

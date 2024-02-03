@@ -113,7 +113,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
-use imgui::{Io, Ui};
+use egui::Ui;
 use once_cell::sync::OnceCell;
 use renderer::RenderEngine;
 use tracing::error;
@@ -124,7 +124,7 @@ use windows::Win32::System::Console::{
     ENABLE_VIRTUAL_TERMINAL_PROCESSING, STD_OUTPUT_HANDLE,
 };
 use windows::Win32::System::LibraryLoader::FreeLibraryAndExitThread;
-pub use {imgui, tracing, windows};
+pub use {tracing, windows};
 
 use crate::mh::{MH_ApplyQueued, MH_Initialize, MH_Uninitialize, MhHook, MH_STATUS};
 
