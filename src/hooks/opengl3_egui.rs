@@ -11,6 +11,8 @@ use crate::mh::MhHook;
 use crate::renderer::RenderState;
 use crate::{Hooks, ImguiRenderLoop};
 
+mod opengl3egui;
+
 type OpenGl32wglSwapBuffersType = unsafe extern "system" fn(HDC) -> ();
 
 struct Trampolines {
