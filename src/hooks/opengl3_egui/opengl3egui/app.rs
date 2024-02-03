@@ -1,8 +1,9 @@
+use crate::hooks::opengl3_egui::opengl3egui::{input::InputCollector, painter, utils};
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use egui::Context;
 use once_cell::sync::OnceCell;
 use parking_lot::lock_api;
-use std::ops::DerefMut;
+use std::{ops::DerefMut, sync::Mutex};
 use windows::Win32::{
     Foundation::{HWND, LPARAM, RECT, WPARAM},
     Graphics::{
@@ -30,8 +31,6 @@ use parking_lot::{Mutex, MutexGuard};
 use spin::lock_api::{Mutex, MutexGuard};
 
 use lock_api::MappedMutexGuard;
-
-use super::{input::InputCollector, painter};
 
 /// Heart and soul of this integration.
 /// Main methods you are going to use are:
@@ -83,7 +82,7 @@ impl<T> OpenGLApp<T> {
 
             let painter = painter::Painter::new();
 
-            *self.data.lock() = Some(AppData {
+            *self.data.lock().unwrap() = Some(AppData {
                 input_collector: InputCollector::new(window),
                 ui: Box::new(ui),
                 gl_context,
@@ -126,6 +125,7 @@ impl<T> OpenGLApp<T> {
         self.init_with_state_context(hdc, window, ui, state, ctx);
     }
 
+    /*
     #[cfg(feature = "parking-lot")]
     pub fn lock_state(&self) -> MappedMutexGuard<'_, parking_lot::RawMutex, T> {
         MutexGuard::map(self.data.lock(), |app| &mut app.as_mut().unwrap().state)
@@ -141,6 +141,7 @@ impl<T> OpenGLApp<T> {
             expect!(app.as_mut(), "You need to call init first")
         })
     }
+    */
 }
 
 impl<T: Default> OpenGLApp<T> {
@@ -156,7 +157,8 @@ impl<T> OpenGLApp<T> {
     #[allow(clippy::cast_ref_to_mut)]
     pub fn render(&self, hdc: HDC) {
         unsafe {
-            let this = &mut *self.lock_data();
+            let mut binding = self.data.lock().unwrap();
+            let this = binding.as_mut().unwrap();
 
             let o_context = wglGetCurrentContext();
             wglMakeCurrent(hdc, this.gl_context).unwrap();
@@ -192,7 +194,8 @@ impl<T> OpenGLApp<T> {
     /// `false` otherwise.
     #[inline]
     pub fn wnd_proc(&self, umsg: u32, wparam: WPARAM, lparam: LPARAM) -> bool {
-        let this = &mut *self.lock_data();
+        let mut binding = self.data.lock().unwrap();
+        let this = binding.as_mut().unwrap();
         this.input_collector.process(umsg, wparam.0, lparam.0);
 
         if umsg == WM_SIZING {
@@ -204,7 +207,8 @@ impl<T> OpenGLApp<T> {
     }
 
     pub fn get_window(&self) -> HWND {
-        let data = &mut *self.lock_data();
+        let mut binding = self.data.lock().unwrap();
+        let data = binding.as_mut().unwrap();
         data.window
     }
 }
@@ -224,8 +228,7 @@ impl<T> OpenGLApp<T> {
     fn get_client_rect(&self) -> (u32, u32) {
         let mut rect = RECT::default();
         unsafe {
-            GetClientRect(*expect!(self.hwnd.get(), "You need to call init first"), &mut rect)
-                .unwrap();
+            GetClientRect(*self.hwnd.get().unwrap(), &mut rect).unwrap();
         }
 
         ((rect.right - rect.left) as u32, (rect.bottom - rect.top) as u32)

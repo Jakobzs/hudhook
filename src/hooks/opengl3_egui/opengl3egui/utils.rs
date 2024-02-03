@@ -3,7 +3,7 @@ use std::ffi::CString;
 use windows::{
     core::PCSTR,
     Win32::{
-        Foundation::HMODULE,
+        Foundation::{HINSTANCE, HMODULE},
         Graphics::OpenGL::wglGetProcAddress,
         System::{
             Console::{AllocConsole, FreeConsole},
@@ -48,13 +48,13 @@ pub fn get_module(module_name: &str) -> HMODULE {
 
 pub fn alloc_console() {
     unsafe {
-        AllocConsole().unwrap();
+        AllocConsole();
     }
 }
 
 pub fn free_console() {
     unsafe {
-        FreeConsole().unwrap();
+        FreeConsole();
     }
 }
 
