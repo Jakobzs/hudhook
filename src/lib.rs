@@ -133,7 +133,6 @@ pub mod hooks;
 pub mod inject;
 pub mod mh;
 pub mod renderer;
-pub mod renderer_egui;
 
 mod util;
 
@@ -212,6 +211,29 @@ pub fn eject() {
 
 /// Implement your `imgui` rendering logic via this trait.
 pub trait ImguiRenderLoop {
+    /// Called once at the first occurrence of the hook. Implement this to
+    /// initialize your data.
+    fn initialize(&mut self, _render_engine: &mut RenderEngine) {}
+
+    /// Called every frame. Use the provided `ui` object to build your UI.
+    fn render(&mut self, ui: &mut Ui);
+
+    /// Called before rendering each frame. Use the provided `ctx` object to
+    /// modify imgui settings before rendering the UI.
+    fn before_render(&mut self, _render_engine: &mut RenderEngine) {}
+
+    /// Called during the window procedure.
+    fn on_wnd_proc(&self, _hwnd: HWND, _umsg: u32, _wparam: WPARAM, _lparam: LPARAM) {}
+
+    /// If this function returns `true`, the WndProc function will not call the
+    /// procedure of the parent window.
+    fn should_block_messages(&self, _io: &Io) -> bool {
+        false
+    }
+}
+
+/// Implement your `emgui` rendering logic via this trait.
+pub trait EguiRenderLoop {
     /// Called once at the first occurrence of the hook. Implement this to
     /// initialize your data.
     fn initialize(&mut self, _render_engine: &mut RenderEngine) {}
