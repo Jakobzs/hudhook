@@ -133,6 +133,7 @@ pub mod hooks;
 pub mod inject;
 pub mod mh;
 pub mod renderer;
+pub mod renderer_egui;
 
 mod util;
 
