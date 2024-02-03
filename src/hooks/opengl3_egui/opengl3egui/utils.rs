@@ -3,12 +3,9 @@ use std::ffi::CString;
 use windows::{
     core::PCSTR,
     Win32::{
-        Foundation::{HINSTANCE, HMODULE},
+        Foundation::HMODULE,
         Graphics::OpenGL::wglGetProcAddress,
-        System::{
-            Console::{AllocConsole, FreeConsole},
-            LibraryLoader::{FreeLibraryAndExitThread, GetModuleHandleA, GetProcAddress},
-        },
+        System::LibraryLoader::{GetModuleHandleA, GetProcAddress},
     },
 };
 
@@ -43,24 +40,5 @@ pub fn get_module(module_name: &str) -> HMODULE {
             // this also shouldn't silently error
             HMODULE(0)
         }
-    }
-}
-
-pub fn alloc_console() {
-    unsafe {
-        AllocConsole();
-    }
-}
-
-pub fn free_console() {
-    unsafe {
-        FreeConsole();
-    }
-}
-
-pub fn unload() {
-    unsafe {
-        let module = get_module("example_wnd.dll");
-        FreeLibraryAndExitThread(module, 0);
     }
 }
