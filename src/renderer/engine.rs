@@ -6,6 +6,7 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use egui::{Context, TextureId, Ui};
+use epaint::Vertex;
 use memoffset::offset_of;
 use tracing::{error, trace};
 use windows::core::{s, w, ComInterface, Result, PCSTR, PCWSTR};
@@ -105,7 +106,7 @@ struct FrameResources {
     vertex_buffer: Option<ID3D12Resource>,
     index_buffer_size: usize,
     vertex_buffer_size: usize,
-    vertices: Vec<DrawVert>,
+    vertices: Vec<Vertex>,
     indices: Vec<DrawIdx>,
 }
 
@@ -125,7 +126,7 @@ impl FrameResources {
             let desc = D3D12_RESOURCE_DESC {
                 Dimension: D3D12_RESOURCE_DIMENSION_BUFFER,
                 Alignment: 65536,
-                Width: (self.vertex_buffer_size * size_of::<imgui::DrawVert>()) as u64,
+                Width: (self.vertex_buffer_size * size_of::<Vertex>()) as u64,
                 Height: 1,
                 DepthOrArraySize: 1,
                 MipLevels: 1,
@@ -830,7 +831,7 @@ impl RenderEngine {
                 SemanticIndex: 0,
                 Format: DXGI_FORMAT_R32G32_FLOAT,
                 InputSlot: 0,
-                AlignedByteOffset: offset_of!(DrawVert, pos) as u32,
+                AlignedByteOffset: offset_of!(Vertex, pos) as u32,
                 InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
                 InstanceDataStepRate: 0,
             },
@@ -839,7 +840,7 @@ impl RenderEngine {
                 SemanticIndex: 0,
                 Format: DXGI_FORMAT_R32G32_FLOAT,
                 InputSlot: 0,
-                AlignedByteOffset: offset_of!(DrawVert, uv) as u32,
+                AlignedByteOffset: offset_of!(Vertex, uv) as u32,
                 InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
                 InstanceDataStepRate: 0,
             },
@@ -848,7 +849,7 @@ impl RenderEngine {
                 SemanticIndex: 0,
                 Format: DXGI_FORMAT_R8G8B8A8_UNORM,
                 InputSlot: 0,
-                AlignedByteOffset: offset_of!(DrawVert, col) as u32,
+                AlignedByteOffset: offset_of!(Vertex, color) as u32,
                 InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
                 InstanceDataStepRate: 0,
             },
@@ -1162,8 +1163,8 @@ impl RenderEngine {
                     .as_ref()
                     .unwrap()
                     .GetGPUVirtualAddress(),
-                SizeInBytes: (frame_resources.vertex_buffer_size * size_of::<DrawVert>()) as _,
-                StrideInBytes: size_of::<DrawVert>() as _,
+                SizeInBytes: (frame_resources.vertex_buffer_size * size_of::<Vertex>()) as _,
+                StrideInBytes: size_of::<Vertex>() as _,
             }]),
         );
 
@@ -1212,7 +1213,7 @@ impl RenderEngine {
             .map_err(print_device_removed_reason)?;
 
         let range = D3D12_RANGE::default();
-        let mut vtx_resource: *mut imgui::DrawVert = null_mut();
+        let mut vtx_resource: *mut Vertex = null_mut();
         let mut idx_resource: *mut imgui::DrawIdx = null_mut();
 
         self.frame_resources[idx].vertices.clear();
