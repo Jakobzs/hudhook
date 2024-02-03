@@ -3,7 +3,6 @@
 use std::ffi::c_void;
 use std::mem::size_of;
 
-use imgui::Io;
 use parking_lot::MutexGuard;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::*;

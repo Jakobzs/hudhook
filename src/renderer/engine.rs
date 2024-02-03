@@ -5,6 +5,7 @@ use std::ptr::{null, null_mut};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use egui::{Context, TextureId, Ui};
 use memoffset::offset_of;
 use tracing::{error, trace};
 use windows::core::{s, w, ComInterface, Result, PCSTR, PCWSTR};
@@ -402,9 +403,11 @@ impl RenderEngine {
         let gpu_desc = unsafe { textures_heap.GetGPUDescriptorHandleForHeapStart() };
 
         let mut ctx = Context::create();
+        /*
         ctx.set_ini_filename(None);
         ctx.io_mut().backend_flags |= BackendFlags::RENDERER_HAS_VTX_OFFSET;
         ctx.set_renderer_name(String::from(concat!("imgui-dx12@", env!("CARGO_PKG_VERSION"))));
+        */
 
         let ctx = Rc::new(RefCell::new(ctx));
         let compositor = unsafe { Compositor::new(target_hwnd) }?;
